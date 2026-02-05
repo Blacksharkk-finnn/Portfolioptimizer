@@ -10,6 +10,7 @@ from typing import List, Dict, Optional
 import uvicorn
 from datetime import datetime
 import asyncio
+import traceback
 
 # Import core modules
 from database import UserProfile, Portfolio, Position, get_db, init_db
@@ -177,6 +178,8 @@ async def register_user(user_data: UserProfileRequest, db = Depends(get_db)):
         )
 
     except Exception as e:
+        print("Optimization error:", e)
+        traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
@@ -221,11 +224,34 @@ async def optimize_portfolio(request: OptimizationRequest, db = Depends(get_db))
                                [0.015, 0.05, 0.012],
                                [0.010, 0.012, 0.035]])[:n_assets, :n_assets]
 
+        # Ensure constraints are feasible for the number of assets
+        constraints = request.constraints or {}
+        if not isinstance(constraints, dict):
+            constraints = {}
+
+        min_weight = float(constraints.get('min_weight', 0.01))
+        max_weight = float(constraints.get('max_weight', 0.30))
+        min_positions = int(constraints.get('min_positions', n_assets))
+
+        # Make sure max_weight allows weights to sum to 1
+        if max_weight * n_assets < 1.0:
+            max_weight = 1.0 / n_assets
+
+        # Min positions cannot exceed number of assets
+        if min_positions > n_assets:
+            min_positions = n_assets
+
+        constraints = {
+            'min_weight': min_weight,
+            'max_weight': max_weight,
+            'min_positions': min_positions
+        }
+
         # Run optimization
         result = optimizer.optimize_portfolio(
             expected_returns,
             cov_matrix,
-            constraints=request.constraints,
+            constraints=constraints,
             method=request.method
         )
 
