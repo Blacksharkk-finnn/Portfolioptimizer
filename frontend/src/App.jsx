@@ -32,7 +32,7 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
-const API_BASE = '';
+const API_BASE = import.meta.env.VITE_API_BASE || '';
 
 function App() {
   const [loading, setLoading] = useState(true);
