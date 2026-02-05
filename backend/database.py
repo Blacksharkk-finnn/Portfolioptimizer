@@ -153,6 +153,9 @@ class Recommendation(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     accepted = Column(String(50))  # 'pending', 'accepted', 'rejected'
 
+    # Relationships
+    portfolio = relationship("Portfolio", back_populates="recommendations")
+
 
 class BacktestResult(Base):
     """Historical backtesting results"""
